@@ -47,11 +47,18 @@ def get_user(id):
       return ({})
    return users
 
-@app.route('/users', methods=['GET', 'POST'])
+@app.route('/users', methods=['GET', 'POST', 'DELETE'])
 def get_users():
    if request.method == 'GET':
       search_username = request.args.get('name')
-      if search_username :
+      search_job = request.args.get('job')
+      if (search_username != None) and (search_job != None):
+         subdict = {'users_list' : []}
+         for user in users['users_list']:
+            if user['name'] == search_username and user['job'] == search_job:
+               subdict['users_list'].append(user)
+         return subdict
+      elif search_username :
          subdict = {'users_list' : []}
          for user in users['users_list']:
             if user['name'] == search_username:
@@ -64,6 +71,11 @@ def get_users():
       resp = jsonify(success=True)
       #resp.status_code = 200 #optionally, you can always set a response code. 
       # 200 is the default code for a normal response
+      return resp
+   elif request.method == 'DELETE':
+      userToDelete = request.get_json()
+      users['users_list'].remove(userToDelete)
+      resp = jsonify(success=True)
       return resp
    else:
       return users
