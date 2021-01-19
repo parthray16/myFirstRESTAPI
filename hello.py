@@ -1,7 +1,13 @@
 from flask import Flask
 from flask import request
 from flask import jsonify
+from flask import make_response
+from flask_cors import CORS
+import random
+import string
+
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def hello_world():
@@ -38,13 +44,22 @@ users = {
    ]
 }
 
-@app.route('/users/<id>')
+@app.route('/users/<id>', methods=['GET', 'DELETE'])
 def get_user(id):
-   if id :
-      for user in users['users_list']:
-        if user['id'] == id:
-           return user
-      return ({})
+   if request.method == 'GET':
+      if id :
+         for user in users['users_list']:
+            if user['id'] == id:
+               return user
+         return ({})
+   if request.method == 'DELETE':
+      if id:
+         for user in users['users_list']:
+            if user['id'] == id:
+               users['users_list'].remove(user)
+               break
+         resp = make_response(jsonify(success=True), 204)
+         return resp
    return users
 
 @app.route('/users', methods=['GET', 'POST', 'DELETE'])
@@ -67,15 +82,17 @@ def get_users():
       return users
    elif request.method == 'POST':
       userToAdd = request.get_json()
+      userToAdd['id'] = id_generator()
       users['users_list'].append(userToAdd)
-      resp = jsonify(success=True)
-      #resp.status_code = 200 #optionally, you can always set a response code. 
-      # 200 is the default code for a normal response
+      resp = make_response(jsonify(userToAdd), 201)
       return resp
    elif request.method == 'DELETE':
       userToDelete = request.get_json()
       users['users_list'].remove(userToDelete)
-      resp = jsonify(success=True)
+      resp = make_response(jsonify(success=True), 204)
       return resp
    else:
       return users
+
+def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
+   return ''.join(random.choice(chars) for _ in range(size))
